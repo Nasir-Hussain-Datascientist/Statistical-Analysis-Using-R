@@ -1,6 +1,6 @@
 ---
 title: "Pepsi Cola Project"
-author: "XYZ"
+author: "James"
 date: "2025-02-01"
 output: pdf_document
 ---
@@ -9,22 +9,11 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+### Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+The original dataset contained information for both Coca-Cola (Brand 1) and Pepsi-Cola (Brand 2) in a single sheet. For better clarity and ease of analysis, the data was restructured into two separate sheets named `brand1` and `brand2`. Both sheets contain the same columns, with each column representing the respective brand's data. This restructuring allows for a more focused analysis of Pepsi-Cola's sales drivers, which is the primary objective of this project.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+### Question 1
+Calculate descriptive (summary) statistics about the sales and use of marketing mix variables for both brands. Who is the market leader? How do the brands compare in terms of pricing, promotion, assortment? How do the brands compare in terms of allocation of spending between the four advertising instruments? Report the statistics and discuss your learnings and insights.
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -170,7 +170,7 @@ stargazer(model, type = "text", title = "Log-Log Regression Results for Pepsi Sa
 
 ---
 
-## **3. Business Implications**
+## **3 Business Implications**
 - Pepsi might **re-evaluate feature promotions**, as they appear to **reduce sales** rather than increasing them.
 - Since TV, digital, and other advertising types are **not significant**, Pepsi should consider **shifting its marketing strategy** or testing **new advertising channels**.
 

@@ -2,8 +2,11 @@
 title: "Pepsi Cola Project"
 author: "James"
 date: "2025-02-01"
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -97,74 +100,82 @@ Overall, Coca-Cola allocates a higher proportion of its marketing budget across 
 
 Coca-Cola is the clear market leader, outpacing Pepsi-Cola in sales volume, pricing, promotional activity, and advertising spend. The higher sales, larger assortment, more extensive promotional activity, and greater investment in advertising solidify Coca-Cola's dominance in the market. Pepsi-Cola, while competitive, appears to have a more restrained marketing strategy, focusing less on promotion and advertising.
 
+## Question 2
+Estimate the following log-log regression model, which explains Pepsi’s sales (“sales.brand2”) as a function of Pepsi’s own marketing mix variables. Note that a value of 1 is only added to variables that contain zero values (feature, display, and the 4 advertising instruments).
+(a) log(sales.brand2) = β0 + β1 log(feature.brand2+1) + β2 log(display.brand2+1) + β3 log(assortment.brand2) + β4 log(price.brand2) + β5 log(tv.brand2+1) + β6 log(digital.brand2+1) + β7 log(ooh.brand2+1) + β8 log(magazine.brand2+1)
+Report the estimates from equation (a) in a table. Based on this model, what do you conclude about the relation between Pepsi’s marketing mix variables and its sales? How do you interpret the size of statistically significant estimates from equation (a)?
+
+
+
 ```{r message=FALSE, warning=FALSE}
-# Load necessary library
+# Load necessary libraries
 library(tidyverse)
 
-# Assuming the dataset has already been loaded as brand2 data frame
-# Add 1 only to variables that contain zero values for feature, display, tv, digital, ooh, and magazine
+# Transform data for log-log regression
 brand2 <- brand2 %>%
   mutate(
     log_sales = log(sales.brand2),
     log_feature = ifelse(feature.brand2 == 0, log(feature.brand2 + 1), log(feature.brand2)),
     log_display = ifelse(display.brand2 == 0, log(display.brand2 + 1), log(display.brand2)),
-    log_assortment = log(assortment.brand2),
-    log_price = log(price.brand2),
+    log_assortment = log(assortment.brand2),  # No +1 needed
+    log_price = log(price.brand2),  # No +1 needed
     log_tv = ifelse(tv.brand2 == 0, log(tv.brand2 + 1), log(tv.brand2)),
     log_digital = ifelse(digital.brand2 == 0, log(digital.brand2 + 1), log(digital.brand2)),
     log_ooh = ifelse(ooh.brand2 == 0, log(ooh.brand2 + 1), log(ooh.brand2)),
     log_magazine = ifelse(magazine.brand2 == 0, log(magazine.brand2 + 1), log(magazine.brand2))
   )
 
-# Estimate the regression model
+# Estimate the log-log regression model
 model <- lm(log_sales ~ log_feature + log_display + log_assortment + log_price + 
               log_tv + log_digital + log_ooh + log_magazine, data = brand2)
 
-# Display the summary of the model
+# Display regression summary
 summary(model)
 
+
 ```
-### Analysis of Log-Log Regression Model Results for Pepsi:
+```{r warning=TRUE}
+# Load library for formatted tables
+library(stargazer)
 
-In this analysis, we estimated the log-log regression model for Pepsi-Cola’s sales, with log-transformed marketing mix variables. For the variables where zero values existed (feature, display, TV, digital, OOH, and magazine), we added a value of **1** to ensure the log transformation could be applied. This adjustment is standard practice when dealing with variables that contain zero values.
+# Generate a formatted regression table
+stargazer(model, type = "text", title = "Log-Log Regression Results for Pepsi Sales")
 
-The estimated model is:
-
-\[
-\log(\text{sales.brand2}) = \beta_0 + \beta_1 \log(\text{feature.brand2} + 1) + \beta_2 \log(\text{display.brand2} + 1) + \beta_3 \log(\text{assortment.brand2}) + \beta_4 \log(\text{price.brand2}) + \beta_5 \log(\text{tv.brand2} + 1) + \beta_6 \log(\text{digital.brand2} + 1) + \beta_7 \log(\text{ooh.brand2} + 1) + \beta_8 \log(\text{magazine.brand2} + 1)
-\]
-
-#### Model Overview:
-- **Multiple R-squared**: **0.6412**, indicating that about **64.12%** of the variation in Pepsi’s sales is explained by the marketing mix variables.
-- **Adjusted R-squared**: **0.6128**, confirming a reasonably good model fit.
-- **F-statistic**: **22.56** with a **p-value < 2.2e-16**, suggesting that the model is statistically significant.
-
-#### Coefficients and Interpretation:
-
-1. **Intercept (β0)**: **10.04** (statistically significant), representing the baseline sales when all variables are at their baseline levels (after log transformation).
-
-2. **log_feature (β1)**: **-0.7038** (statistically significant, p < 0.001), indicating that higher feature support (after adding 1) is associated with lower sales.
-
-3. **log_display (β2)**: **-0.0055** (not statistically significant, p = 0.429), suggesting display support does not have a substantial effect on sales.
-
-4. **log_assortment (β3)**: **0.2456** (not statistically significant, p = 0.188), indicating that the range of products offered by Pepsi does not significantly affect sales in this dataset.
-
-5. **log_price (β4)**: **-0.3370** (not statistically significant, p = 0.268), suggesting that price changes are not significantly related to sales.
-
-6. **log_tv (β5)**: **-0.0015** (not statistically significant, p = 0.521), showing no significant relationship between TV ad spending and sales.
-
-7. **log_digital (β6)**: **0.0004** (not statistically significant, p = 0.937), suggesting digital ad spending has negligible impact on sales.
-
-8. **log_ooh (β7)**: **0.0053** (not statistically significant, p = 0.123), indicating out-of-home advertising does not have a significant effect on sales.
-
-9. **log_magazine (β8)**: **0.0109** (not statistically significant, p = 0.268), implying magazine advertising does not significantly contribute to sales.
-
-#### Conclusion:
-- The **only significant variable** is **log_feature**, indicating that Pepsi's feature support has an inverse relationship with sales, suggesting a decrease in sales as feature support increases.
-- **Other marketing mix variables**, including display, assortment, price, TV, digital, OOH, and magazine, do not show statistically significant relationships with Pepsi's sales in this model.
-
-This analysis highlights the importance of feature support in Pepsi’s sales, while other marketing activities may need further examination for their effectiveness.
+```
 
 
+# **Log-Log Regression Analysis of Pepsi Sales**
+
+
+## **1. Interpretation of the Results**
+### **Statistically Significant Variables (p < 0.05)**
+1. **Feature Advertising (`log_feature`)**
+   - Estimate = **-0.704**, **p-value < 0.01 (highly significant)**  
+   - **Interpretation:** A 1% increase in **feature advertising** (promotions in-store) **decreases Pepsi’s sales by ~0.70%**.  
+   - **Possible reason:** This could mean that promotional features do not directly drive sales, or they might be associated with price discounts that reduce total revenue.
+
+2. **Intercept (constant term)**
+   - Estimate = **10.039**, **p-value < 0.01**  
+   - This represents the baseline sales when all marketing variables are **at their minimum**.
+
+### **Non-Significant Variables (p > 0.05)**
+- **Display, Assortment, Price, TV, Digital, OOH, and Magazine Advertising** are **not statistically significant** in this model, meaning they do not have a strong or consistent impact on sales.
+
+---
+
+## **2. Conclusion**
+- **Feature advertising** has a **negative and significant impact** on sales, suggesting that in-store promotions may not be effective or could be linked to price cuts.  
+- **Other marketing mix variables (display, price, TV, digital, OOH, and magazine advertising) do not show significant effects** on Pepsi’s sales, at least in this dataset.
+- The model explains **64.1%** of the variation in sales, which is fairly strong but suggests that **other factors (not included in this model) might also influence Pepsi’s sales**.
+
+---
+
+## **3. Business Implications**
+- Pepsi might **re-evaluate feature promotions**, as they appear to **reduce sales** rather than increasing them.
+- Since TV, digital, and other advertising types are **not significant**, Pepsi should consider **shifting its marketing strategy** or testing **new advertising channels**.
+
+---
+
+Would you like me to improve the model, such as testing interaction effects or checking for multicollinearity? 🚀
 
 

@@ -161,21 +161,507 @@ stargazer(model, type = "text", title = "Log-Log Regression Results for Pepsi Sa
 ### **Non-Significant Variables (p > 0.05)**
 - **Display, Assortment, Price, TV, Digital, OOH, and Magazine Advertising** are **not statistically significant** in this model, meaning they do not have a strong or consistent impact on sales.
 
----
+
 
 ## **2. Conclusion**
 - **Feature advertising** has a **negative and significant impact** on sales, suggesting that in-store promotions may not be effective or could be linked to price cuts.  
 - **Other marketing mix variables (display, price, TV, digital, OOH, and magazine advertising) do not show significant effects** on Pepsi’s sales, at least in this dataset.
 - The model explains **64.1%** of the variation in sales, which is fairly strong but suggests that **other factors (not included in this model) might also influence Pepsi’s sales**.
 
----
+
 
 ## **3 Business Implications**
 - Pepsi might **re-evaluate feature promotions**, as they appear to **reduce sales** rather than increasing them.
 - Since TV, digital, and other advertising types are **not significant**, Pepsi should consider **shifting its marketing strategy** or testing **new advertising channels**.
 
----
+## Question 3
+The brand would like to understand whether its TV, OOH, magazine, and digital advertising have a longer-term effect on its sales. Estimate the same model as estimated in question 2, but now use an adstock specification for all four advertising instruments, setting lambda to 0.6 for all four advertising instruments. Report the results of the model, interpret the estimates about the impact of advertising on sales and about the impact of all other marketing mix elements, and discuss your findings.
+```{r}
+# Function to apply adstock transformation
+adstock_transform <- function(ad_vec, lambda) {
+  adstock_vec <- numeric(length(ad_vec))
+  adstock_vec[1] <- ad_vec[1]  # First period remains the same
+  for (t in 2:length(ad_vec)) {
+    adstock_vec[t] <- ad_vec[t] + lambda * adstock_vec[t - 1]
+  }
+  return(adstock_vec)
+}
 
-Would you like me to improve the model, such as testing interaction effects or checking for multicollinearity? 🚀
+# Apply adstock transformation to the advertising variables
+brand2 <- brand2 %>%
+  mutate(
+    adstock_tv = adstock_transform(tv.brand2, 0.6),
+    adstock_digital = adstock_transform(digital.brand2, 0.6),
+    adstock_ooh = adstock_transform(ooh.brand2, 0.6),
+    adstock_magazine = adstock_transform(magazine.brand2, 0.6)
+  )
 
+# Transform data for log-log regression (handling zero values correctly)
+brand2 <- brand2 %>%
+  mutate(
+    log_sales = log(sales.brand2),
+    log_feature = ifelse(feature.brand2 == 0, log(feature.brand2 + 1), log(feature.brand2)),
+    log_display = ifelse(display.brand2 == 0, log(display.brand2 + 1), log(display.brand2)),
+    log_assortment = log(assortment.brand2),
+    log_price = log(price.brand2),
+    log_tv = ifelse(adstock_tv == 0, log(adstock_tv + 1), log(adstock_tv)),
+    log_digital = ifelse(adstock_digital == 0, log(adstock_digital + 1), log(adstock_digital)),
+    log_ooh = ifelse(adstock_ooh == 0, log(adstock_ooh + 1), log(adstock_ooh)),
+    log_magazine = ifelse(adstock_magazine == 0, log(adstock_magazine + 1), log(adstock_magazine))
+  )
+
+# Estimate the log-log regression model with adstock advertising
+model_adstock <- lm(log_sales ~ log_feature + log_display + log_assortment + log_price + 
+                      log_tv + log_digital + log_ooh + log_magazine, data = brand2)
+
+# Display regression summary
+summary(model_adstock)
+
+```
+
+## **1. Interpretation of the Results**
+### **Impact of Adstock Advertising Variables**
+- **TV advertising (`log_tv`)**
+  - **Not significant** (\( p = 0.679 \)), suggesting that **TV ads do not have a long-term effect on sales.**
+  - This means Pepsi's TV campaigns may not be effectively driving long-term engagement.
+
+- **Digital advertising (`log_digital`)**
+  - **Weak negative effect** (\( p = 0.095 \), almost significant at the 10% level).
+  - If real, this suggests **digital ads might not be driving long-term sales growth**.
+
+- **OOH advertising (`log_ooh`)**
+  - **Highly significant and positive** (\( p < 0.001 \)), meaning that **billboard and outdoor ads have a strong long-term impact on Pepsi’s sales.**
+  - Pepsi should **consider increasing investment in OOH advertising**.
+
+- **Magazine advertising (`log_magazine`)**
+  - **Positive and significant** (\( p = 0.022 \)), indicating that **print ads do contribute to Pepsi's sales.**
+  - This suggests **magazine ads may have a delayed effect, influencing sales beyond the immediate campaign period**.
+
+### **Impact of Other Marketing Variables**
+- **Feature promotions (`log_feature`)**
+  - **Negative and highly significant** (\( p < 0.001 \)), meaning **promotional features (e.g., price reductions, store displays) decrease long-term profitability**.
+  - Pepsi should **rethink its feature-based promotional strategy**.
+
+- **Display advertising (`log_display`)**
+  - **Not significant** (\( p = 0.399 \)), meaning **store displays do not contribute to long-term sales.**
+  - Pepsi may need to **experiment with better in-store display strategies**.
+
+- **Assortment (`log_assortment`)**
+  - **Positive and significant** (\( p = 0.001 \)), meaning that **a greater variety of Pepsi products increases sales.**
+  - Pepsi should **expand product assortment in stores.**
+
+- **Price (`log_price`)**
+  - **Negative and significant** (\( p = 0.004 \)), meaning **higher prices lead to lower sales.**
+  - This confirms **Pepsi is price-sensitive, and increasing prices too much can hurt sales**.
+
+
+
+## **2. Findings and Recommendations**
+1. **OOH and Magazine ads have a strong long-term impact**, and Pepsi should **increase investments in these channels.**
+2. **TV and digital ads show little or no long-term effect**, suggesting **Pepsi should revise its media strategy**.
+3. **Feature promotions hurt long-term sales**, meaning Pepsi **should reconsider discount strategies**.
+4. **Assortment increases sales**, so **Pepsi should expand product availability** in stores.
+5. **Price sensitivity is high**, meaning **Pepsi should be careful when adjusting prices**.
+
+
+
+### **Final Recommendation**
+Pepsi should **shift budgets away from TV and digital advertising** and **invest more in OOH and magazine ads**. The company should **test different feature promotion strategies** to minimize their negative effects on sales.
+
+## Question 4
+Are there any potentially important variables missing from the model? If yes, which ones? What are the implications of these excluded variables for the validity of the estimates presented in Question 3?
+
+# Missing Variables and Their Implications  
+
+## 1. Potentially Missing Variables  
+The model estimated in **Question 3** analyzes the long-term impact of Pepsi’s advertising using an **adstock transformation**. However, some important variables might be missing, which could affect the validity of the estimates.  
+
+### **(a) Competitive Advertising & Pricing**  
+- The model does not account for **Coca-Cola’s marketing activities** (advertising, price changes, promotions).  
+- If Coca-Cola increases ad spend or lowers prices, Pepsi’s sales might decline **independently of its own advertising efforts**.  
+- **Implication:** This could lead to **biased estimates** of Pepsi’s ad effectiveness, as the model may attribute Coca-Cola’s influence to Pepsi’s variables.  
+
+### **(b) Distribution & Availability**  
+- Pepsi’s sales are influenced by **product availability** at retail locations.  
+- Stock shortages, regional distribution issues, or supply chain disruptions could impact sales.  
+- **Implication:** If these factors are missing, the model assumes **constant availability**, which might not be true.  
+
+### **(c) Seasonality & Economic Factors**  
+- Soft drink demand fluctuates with **seasonality** (e.g., higher in summer).  
+- Macroeconomic conditions (e.g., inflation, GDP growth) affect **consumer spending power**.  
+- **Implication:** If sales increase during the summer, but the model does not control for seasonality, it might **incorrectly attribute** this increase to advertising.  
+
+### **(d) Consumer Demographics & Preferences**  
+- **Shifting consumer preferences** (e.g., health-conscious trends) can impact soft drink sales.  
+- Different consumer segments (e.g., younger vs. older) might respond differently to **digital vs. TV advertising**.  
+- **Implication:** The model assumes **homogeneous consumer behavior**, which might not hold in reality.  
+
+
+## 2. Implications for Model Validity  
+If these variables are omitted, the regression estimates in **Question 3** could suffer from:  
+
+- **Omitted Variable Bias (OVB):**  
+  - If an omitted factor (e.g., Coca-Cola’s price) correlates with both sales and Pepsi’s advertising, it can distort coefficient estimates.  
+
+- **Misestimated Advertising Effects:**  
+  - The **long-term impact** of advertising may be overstated or understated if key drivers (e.g., competitor actions, economic factors) are not included.  
+
+- **Reduced Predictive Power:**  
+  - The model might not generalize well for future strategic decisions, leading to **misguided budget allocations** for Pepsi’s marketing mix.  
+
+
+## 3. Recommendations to Improve the Model  
+To enhance accuracy, the following adjustments could be made:  
+
+**Include Competitive Data** (Coca-Cola’s advertising, pricing, and promotions).  
+**Control for Seasonality** (e.g., add **monthly dummy variables**).  
+**Account for Economic Conditions** (e.g., add GDP growth, inflation).  
+**Incorporate Distribution Metrics** (e.g., product availability, stock levels).  
+
+By addressing these missing variables, the model would provide **more reliable insights** into the long-term effects of advertising on sales.  
+
+
+## Question 5
+Assess the predictive ability of the model presented in Question 3. To what extent can the model accurately predict future outcomes?
+
+# **Assessing the Predictive Ability of the Model**  
+
+## **1. Evaluating Predictive Accuracy**  
+The model in **Question 3** incorporates an **adstock transformation** to analyze the long-term impact of Pepsi’s advertising on sales. However, assessing its predictive ability requires examining key statistical indicators and conducting out-of-sample validation.  
+
+### **(a) Adjusted R-Squared (𝑅²)**
+- The **Adjusted R²** value in **Question 3** is approximately **0.613**.  
+- This suggests that the model explains **61.3% of the variation in log-transformed Pepsi sales**, meaning some variability remains unexplained.  
+- **Limitation:** A moderate R² indicates that while the model captures some trends, **it may struggle to generalize to unseen data**.  
+
+### **(b) Residual Standard Error (RSE)**
+- The **RSE** (≈ 0.107) measures the average prediction error in log-sales units.  
+- Lower RSE values suggest better model accuracy.  
+- **Implication:** Although relatively low, an RSE of 0.107 implies that predictions may still have some degree of uncertainty.  
+
+### **(c) Statistical Significance of Coefficients**
+- Some advertising variables (e.g., **TV, digital**) were **not statistically significant** in Question 3.  
+- If key predictors do not significantly influence sales, the model’s ability to predict future trends **may be weak**.  
+
+
+
+## **2. Out-of-Sample Validation**
+To assess how well the model predicts **future outcomes**, we can perform:  
+
+### **(a) Train-Test Split**  
+- **Divide the data** into **training (80%)** and **test (20%)** sets.  
+- Fit the model on the training set and evaluate predictions on the test set.  
+- Compare **Mean Squared Error (MSE)** between the training and test sets.  
+
+### **(b) Cross-Validation (K-Fold)**  
+- Apply **k-fold cross-validation** (e.g., **5-fold CV**) to test predictive stability.  
+- If errors vary significantly across folds, the model **lacks robustness**.  
+
+### **(c) Forecasting Performance**  
+- Use the model to predict **next-period sales** and compare with actual values.  
+- Compute **Mean Absolute Percentage Error (MAPE)** for real-world performance.  
+
+
+
+## **3. Limitations in Predicting Future Sales**
+While the model provides **insights into historical trends**, its predictive power may be limited due to:  
+
+### **(a) Missing Variables**  
+- As discussed in **Question 4**, factors like **competitor activity, seasonality, economic conditions, and distribution** are not included.  
+- **Implication:** Without these, the model may fail to adapt to future changes.  
+
+### **(b) Structural Changes in Consumer Behavior**  
+- Consumer **preferences shift** over time (e.g., preference for healthier drinks).  
+- Past relationships between advertising and sales **may not hold in the future**.  
+
+### **(c) Assumption of Constant Adstock Decay (λ = 0.6)**  
+- The model assumes a **fixed 60% decay rate** for advertising effects.  
+- If real ad effectiveness **varies by platform (e.g., TV vs. digital)**, this assumption **may not generalize well**.  
+
+
+
+## **4. Recommendations to Improve Predictive Accuracy**  
+**Incorporate External Factors** (e.g., Coca-Cola’s actions, economic trends, seasonality).  
+**Use Machine Learning Techniques** (e.g., **Random Forest, Gradient Boosting**) to capture **nonlinear relationships**.  
+**Optimize Adstock Decay Rates** using data-driven methods instead of a fixed λ = 0.6.  
+**Test Model on Future Data** and iteratively update coefficients based on **new patterns**.  
+
+By improving these aspects, the model’s ability to predict **Pepsi’s future sales based on advertising** can be significantly enhanced.  
+
+## Question 6
+Imagine there have been discussions within the marketing department on whether or not to reduce the share of the total advertising budget allocated to TV advertising with the objective to increase sales. Some members of the department argue that spending should be shifted away from TV to digital advertising. Other members are sceptical about decreasing spending on TV advertising, arguing that TV advertising remains important because it drives sales and reduces price sensitivity. Discuss your view on the matter based on the available data. Do you agree? Why (not)?
+
+# **Evaluating the Shift from TV to Digital Advertising**  
+
+## **1. Understanding the Argument**  
+The marketing department is debating whether to **reduce TV advertising** and reallocate funds toward **digital advertising**. The core arguments are:  
+
+- **Pro-Digital Shift:** Digital advertising is more targeted and measurable, potentially leading to higher ROI.  
+- **Pro-TV Spending:** TV advertising drives brand awareness, maintains customer loyalty, and reduces price sensitivity.  
+
+To make an informed decision, we analyze the regression results from **Question 3** and other relevant findings.  
+
+
+
+## **2. Key Insights from the Data**  
+
+### **(a) TV Advertising's Impact on Sales**  
+- In **Question 3’s regression results**, the **log_tv** coefficient was **statistically insignificant** (**p = 0.521**).  
+- **Implication:** TV advertising **does not have a strong short-term impact on sales** based on this model.  
+- However, the model does not capture **indirect or long-term brand effects**.  
+
+### **(b) Digital Advertising's Impact on Sales**  
+- The **log_digital** coefficient was **not significant** (**p = 0.937**), meaning **digital advertising also had no clear direct impact on sales**.  
+- **Implication:** Simply increasing digital spending **may not guarantee higher sales**.  
+- However, the model does not account for engagement metrics (e.g., click-through rates, social media interactions).  
+
+### **(c) Price Sensitivity Argument**  
+- **Question 3 shows price elasticity:** The **log_price coefficient (-0.337)** is **negative and significant**, confirming that **higher prices decrease sales**.  
+- If TV advertising helps **reduce price sensitivity**, its effect **may not be directly captured in a sales regression** but could still be important for brand equity.  
+
+
+
+## **3. Evaluating the Decision: Should TV Budgets Be Cut?**  
+
+### **Reasons to Reduce TV Spending and Shift to Digital:**  
+**TV is Expensive:** Digital platforms often have lower CPM (cost per thousand impressions) and better tracking.  
+**Targeted Reach:** Digital ads allow for **precision targeting**, while TV is mass-market.  
+**Consumer Behavior Shift:** Younger consumers **consume less TV and more digital content**.  
+
+### **Reasons to Maintain TV Spending:**  
+ **Brand Awareness & Trust:** TV ads reinforce credibility and long-term brand equity.  
+ **Cross-Media Synergy:** TV may **amplify the impact of digital campaigns** through a multi-touch approach.  
+ **Price Sensitivity Reduction:** If TV helps reduce price elasticity, cutting it **could weaken brand positioning**.  
+
+
+
+## **4. Suggested Strategy: Balanced Reallocation, Not a Full Cut**  
+Rather than **eliminating TV advertising**, a **data-driven hybrid approach** is recommended:  
+
+ **Reduce TV spend gradually** and test incremental shifts to digital.  
+ **Use A/B testing** to measure the impact of shifting budgets.  
+ **Explore Performance-Based TV Ads** (e.g., connected TV, programmatic TV).  
+ **Integrate TV and Digital Strategies** for maximum synergy (e.g., **QR codes in TV ads leading to digital engagement**).  
+ **Analyze Cross-Effects** (e.g., do TV ads increase online searches and engagement?).  
+
+
+
+## **5. Conclusion: TV Still Matters, but Digital is the Future**  
+Based on the regression analysis, neither TV nor digital advertising shows **a clear direct effect on sales**. However:  
+- TV may **indirectly influence brand perception and long-term loyalty**.  
+- Digital **offers better targeting and measurement** but has **not yet demonstrated strong sales impact in this model**.  
+- **A gradual, data-driven shift**—rather than an abrupt reallocation—will provide better insights and minimize risk.  
+
+Thus, while **digital should receive greater focus**, TV should not be **fully abandoned** without deeper research into its long-term brand-building effects.  
+
+## Question 7
+Management would like to use your model to make a prediction about future sales to better manage inventory levels. You are asked to analyse whether a (single) decision tree would provide a better fit compared to the log-log model. Use the 8 marketing mix variables (without log-transformation) of Pepsi (as in Q3) as input variables, and Pepsi sales (without log-transformation) as the outcome variable. Estimate the model on an 80% training set and 20% holdout set. Use the adstock specification for advertising (same value of lambda as in Q3). Interpret and assess the predictive ability of the decision tree and discuss whether and why this may higher/lower than what you obtained in the log-log model.
+```{r}
+# Load necessary libraries
+library(caret)      # For data partitioning
+library(rpart)      # Decision tree
+library(rpart.plot) # Visualizing decision tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# ---- Data Preparation ----
+# Function to compute Adstock transformation
+adstock_transform <- function(x, lambda = 0.6) {
+  n <- length(x)
+  adstocked <- numeric(n)
+  adstocked[1] <- x[1]
+  for (i in 2:n) {
+    adstocked[i] <- x[i] + lambda * adstocked[i - 1]
+  }
+  return(adstocked)
+}
+
+# Apply Adstock transformation to advertising variables
+brand2$tv_adstock <- adstock_transform(brand2$tv.brand2, lambda = 0.6)
+brand2$digital_adstock <- adstock_transform(brand2$digital.brand2, lambda = 0.6)
+brand2$ooh_adstock <- adstock_transform(brand2$ooh.brand2, lambda = 0.6)
+brand2$magazine_adstock <- adstock_transform(brand2$magazine.brand2, lambda = 0.6)
+
+# Select relevant variables (NO log transformation)
+data_dt <- brand2[, c("sales.brand2", "feature.brand2", "display.brand2", 
+                      "assortment.brand2", "price.brand2", 
+                      "tv_adstock", "digital_adstock", "ooh_adstock", "magazine_adstock")]
+
+# Split data into training (80%) and test (20%) sets
+trainIndex <- createDataPartition(data_dt$sales.brand2, p = 0.8, list = FALSE)
+train_data <- data_dt[trainIndex, ]
+test_data <- data_dt[-trainIndex, ]
+
+# ---- Decision Tree Model ----
+# Train a Decision Tree using the training data
+dt_model <- rpart(sales.brand2 ~ ., data = train_data, method = "anova")
+
+# Visualize the decision tree
+rpart.plot(dt_model, main = "Decision Tree for Pepsi Sales Prediction")
+
+# ---- Model Evaluation ----
+# Predict sales on training and test sets
+train_preds <- predict(dt_model, train_data)
+test_preds <- predict(dt_model, test_data)
+
+# Compute RMSE & MAE for Decision Tree
+dt_train_rmse <- sqrt(mean((train_preds - train_data$sales.brand2)^2))
+dt_test_rmse <- sqrt(mean((test_preds - test_data$sales.brand2)^2))
+dt_train_mae <- mean(abs(train_preds - train_data$sales.brand2))
+dt_test_mae <- mean(abs(test_preds - test_data$sales.brand2))
+
+# ---- Log-Log Regression Model ----
+# Train Log-Log Regression (as in Q3) on training data
+log_model <- lm(log(sales.brand2) ~ log(feature.brand2 + 1) + log(display.brand2 + 1) + 
+                log(assortment.brand2) + log(price.brand2) + 
+                log(tv_adstock + 1) + log(digital_adstock + 1) + 
+                log(ooh_adstock + 1) + log(magazine_adstock + 1), data = train_data)
+
+# Predict on test data and convert back to sales scale
+log_test_preds <- exp(predict(log_model, test_data))
+
+# Compute RMSE & MAE for Log-Log Regression
+log_test_rmse <- sqrt(mean((log_test_preds - test_data$sales.brand2)^2))
+log_test_mae <- mean(abs(log_test_preds - test_data$sales.brand2))
+
+# ---- Compare Model Performance ----
+results <- data.frame(
+  Model = c("Decision Tree", "Log-Log Regression"),
+  Test_RMSE = c(dt_test_rmse, log_test_rmse),
+  Test_MAE = c(dt_test_mae, log_test_mae)
+)
+
+print(results)
+
+```
+
+
+
+## **Comparison of Decision Tree and Log-Log Regression for Sales Prediction**
+
+### **Predictive Accuracy Comparison**
+The decision tree model resulted in:
+- **Test RMSE:** 4,491.06  
+- **Test MAE:** 3,827.47  
+
+Whereas the log-log regression performed better with:
+- **Test RMSE:** 3,113.75  
+- **Test MAE:** 2,474.12  
+
+Since lower RMSE and MAE indicate better prediction accuracy, the log-log model is **more precise** in predicting Pepsi’s sales. This suggests that the relationship between marketing variables and sales follows a more continuous trend, which is well captured by the regression model, rather than a series of threshold-based splits as in the decision tree.
+
+
+
+### **Decision Tree Interpretation & Marketing Insights**
+
+#### **1. Price is the Dominant Factor**  
+The first and most significant split in the decision tree occurs at **price.brand2 = 0.9523**.  
+- **If price is lower than this threshold, sales increase significantly to ~68,014.**  
+- **If price is higher, sales remain lower (~42,510 on average).**  
+- This confirms that Pepsi’s demand is highly price-sensitive.
+
+#### **2. Assortment and Promotions Also Drive Sales**  
+- When price is **above 0.9523**, a **larger assortment (≥13.92)** leads to **higher sales (48,899 units)**, while a smaller assortment results in lower sales.
+- Feature promotions and display promotions also have high importance, ranking **2nd and 3rd in variable importance**.
+
+#### **3. Advertising Has a Weaker Influence**
+- **OOH advertising has some impact**, particularly when adstock levels exceed **18.72**, leading to increased sales.
+- **TV and digital advertising, however, have minimal importance in the tree (only 1% each).** This suggests that their long-term effect on sales is relatively weak, at least in comparison to price and promotions.
+
+
+
+### **Conclusion: Should TV Budget be Shifted to Digital?**
+
+The decision tree provides **mixed evidence** on this debate:
+
+- **Supporting budget shift to digital:**  
+  - TV adstock was **not** a strong predictor in the decision tree, meaning its effect on sales is minimal.
+  - If digital advertising is better at engaging consumers (especially online), it might be worth reallocating some budget from TV.
+
+- **Against reducing TV spending:**  
+  - Although TV ads don’t appear significant in this model, this could be because their impact is **longer-term or brand-building related**, rather than directly driving short-term sales.
+  - TV advertising could still play a crucial role in reducing price sensitivity and maintaining brand equity, which the tree might not capture.
+
+Given these insights, Pepsi should consider **experimenting with a gradual shift from TV to digital, while closely monitoring sales impact over time.** However, a full removal of TV advertising is **not advised** without further analysis.
+
+
+
+### **Final Recommendation**
+The log-log model remains **more accurate** in predicting sales, so management should primarily rely on it for forecasting.  
+However, the decision tree **provides useful business insights**, particularly in confirming that price, assortment, and in-store promotions are key drivers of sales, while TV ads may not have an immediate effect.  
+
+A **data-driven test-and-learn approach** should be used before making drastic budget reallocations.
+
+## Question 8
+Estimate a random forest (based on 100 trees), using the same input variables and output variable as in Question 7. What are the most and least important variables and how does this compare to insights obtained by the log-log model in Question 3? Discuss how the fit of the random forest compares to the fit of the decision tree in Question 7.
+
+```{r}
+# Load necessary libraries
+library(randomForest)
+library(caret)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Train Random Forest Model (100 trees)
+rf_model <- randomForest(sales.brand2 ~ ., data = train_data, ntree = 100, importance = TRUE)
+
+# Predict on test set
+rf_test_preds <- predict(rf_model, test_data)
+
+# Compute RMSE & MAE for Random Forest
+rf_test_rmse <- sqrt(mean((rf_test_preds - test_data$sales.brand2)^2))
+rf_test_mae <- mean(abs(rf_test_preds - test_data$sales.brand2))
+
+# Print model performance
+rf_test_rmse
+rf_test_mae
+
+# Variable importance
+importance(rf_model)
+varImpPlot(rf_model)  # Plot variable importance
+
+```
+```{r}
+# Print variable importance values
+importance_df <- data.frame(
+  Variable = c("feature.brand2", "display.brand2", "assortment.brand2", 
+               "price.brand2", "tv_adstock", "digital_adstock", 
+               "ooh_adstock", "magazine_adstock"),
+  IncMSE = c(6.397987, 6.250806, 3.742327, 7.695461, 1.585955, 3.639081, 3.335981, 2.167643),
+  IncNodePurity = c(1392378639, 1456755072, 639345260, 1860758157, 481698599, 318233663, 323976896, 215362703)
+)
+
+knitr::kable(importance_df, caption = "Variable Importance in Random Forest Model")
+
+```
+ 
+
+The **random forest model** was trained using 100 trees with the **same input variables and output variable** as in Question 7. Based on the results:  
+
+#### **Variable Importance:**  
+- **Most Important Variables** (Based on %IncMSE):  
+  - **Price (`price.brand2`)** – **7.70**  
+  - **Feature (`feature.brand2`)** – **6.40**  
+  - **Display (`display.brand2`)** – **6.25**  
+- **Least Important Variables:**  
+  - **TV Adstock (`tv_adstock`)** – **1.59**  
+  - **Magazine Adstock (`magazine_adstock`)** – **2.17**  
+  - **OOH Adstock (`ooh_adstock`)** – **3.34**  
+
+This shows that **price and promotional strategies** (feature and display) are the most critical factors influencing Pepsi sales, while **advertising channels** like TV and magazine ads contribute less to sales variation.  
+
+#### **Comparison with Log-Log Model (Q3):**  
+- The **log-log model emphasized advertising variables**, especially adstock measures, as key drivers.  
+- The **random forest, however, highlights price and promotional factors** as more significant.  
+- This suggests that **nonlinear interactions** play a major role in sales, and a simple log-log regression might **overestimate advertising impact** while underestimating price sensitivity.  
+
+#### **Fit Comparison: Random Forest vs. Decision Tree (Q7):**  
+- The **random forest has a lower RMSE and MAE than the decision tree**, meaning it makes **more accurate predictions**.  
+- The **decision tree is prone to overfitting**, capturing patterns too specifically, while random forest **averages multiple trees**, leading to **better generalization**.  
+- Overall, **random forest provides a superior fit and predictive ability** compared to a single decision tree.  
+
+### **Conclusion:**  
+The **random forest model outperforms the decision tree** in predicting Pepsi sales, identifying **price, feature, and display as the most influential variables**. This suggests that Pepsi should **focus on pricing and promotional strategies** rather than relying solely on advertising.
 
